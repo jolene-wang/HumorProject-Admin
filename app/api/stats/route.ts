@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 
 export async function GET() {
@@ -33,7 +33,7 @@ export async function GET() {
     supabase.from('captions').select('like_count').order('like_count', { ascending: false }).limit(100)
   ])
 
-  const avgLikes = likeStats?.reduce((sum, c) => sum + (c.like_count || 0), 0) / (likeStats?.length || 1)
+  const avgLikes = (likeStats?.reduce((sum, c) => sum + (c.like_count || 0), 0) || 0) / (likeStats?.length || 1)
 
   return NextResponse.json({
     totalUsers,
