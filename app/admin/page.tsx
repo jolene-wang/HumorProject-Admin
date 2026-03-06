@@ -1,32 +1,43 @@
 'use client'
-import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [stats, setStats] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    checkUser()
+  }, [])
+
+  const checkUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
       router.push('/auth/signin')
+      return
     }
-  }, [status, router])
-
-  useEffect(() => {
-    if (session) {
-      fetch('/api/stats')
-        .then(res => res.json())
-        .then(data => setStats(data))
-    }
-  }, [session])
-
-  if (status === 'loading') {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    setUser(session.user)
+    loadStats()
+    setLoading(false)
   }
 
-  if (!session) return null
+  const loadStats = async () => {
+    const res = await fetch('/api/stats')
+    const data = await res.json()
+    setStats(data)
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth/signin')
+  }
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -37,9 +48,9 @@ export default function AdminDashboard() {
               <h1 className="text-xl font-bold">HumorProject Admin</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{session.user?.email}</span>
+              <span className="text-sm text-gray-600">{user?.email}</span>
               <button
-                onClick={() => signOut()}
+                onClick={handleSignOut}
                 className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
               >
                 Sign Out

@@ -1,11 +1,10 @@
 'use client'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 
 export default function ImagesPage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [images, setImages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -13,16 +12,17 @@ export default function ImagesPage() {
   const [showCreateForm, setShowCreateForm] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-    }
-  }, [status, router])
+    checkAuth()
+  }, [])
 
-  useEffect(() => {
-    if (session) {
-      loadImages()
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push('/auth/signin')
+      return
     }
-  }, [session])
+    loadImages()
+  }
 
   const loadImages = async () => {
     const res = await fetch('/api/images')
@@ -68,11 +68,9 @@ export default function ImagesPage() {
     loadImages()
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
-
-  if (!session) return null
 
   return (
     <div className="min-h-screen bg-gray-100">

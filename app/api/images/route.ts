@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isSuperadmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
@@ -22,10 +16,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isSuperadmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const body = await request.json()
   const { data, error } = await supabase.from('images').insert(body).select()
@@ -33,10 +23,6 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isSuperadmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const body = await request.json()
   const { id, ...updates } = body
@@ -45,10 +31,6 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.isSuperadmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')

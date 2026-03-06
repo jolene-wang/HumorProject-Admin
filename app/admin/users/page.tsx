@@ -1,26 +1,25 @@
 'use client'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function UsersPage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin')
-    }
-  }, [status, router])
+    checkAuth()
+  }, [])
 
-  useEffect(() => {
-    if (session) {
-      loadUsers()
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push('/auth/signin')
+      return
     }
-  }, [session])
+    loadUsers()
+  }
 
   const loadUsers = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_datetime_utc', { ascending: false })
@@ -28,11 +27,9 @@ export default function UsersPage() {
     setLoading(false)
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
-
-  if (!session) return null
 
   return (
     <div className="min-h-screen bg-gray-100">
