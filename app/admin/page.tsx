@@ -19,6 +19,20 @@ export default function AdminDashboard() {
       router.push('/auth/signin')
       return
     }
+    
+    // Check if user is superadmin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_superadmin')
+      .eq('id', session.user.id)
+      .single()
+    
+    if (!profile?.is_superadmin) {
+      await supabase.auth.signOut()
+      router.push('/auth/error')
+      return
+    }
+    
     setUser(session.user)
     loadStats()
     setLoading(false)

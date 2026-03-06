@@ -18,6 +18,19 @@ export default function CaptionsPage() {
       router.push('/auth/signin')
       return
     }
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_superadmin')
+      .eq('id', session.user.id)
+      .single()
+    
+    if (!profile?.is_superadmin) {
+      await supabase.auth.signOut()
+      router.push('/auth/error')
+      return
+    }
+    
     loadCaptions()
   }
 
