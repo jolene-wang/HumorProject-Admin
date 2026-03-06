@@ -46,19 +46,31 @@ export default function ImagesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this image?')) return
-    await fetch(`/api/images?id=${id}`, { method: 'DELETE' })
-    loadImages()
+    const res = await fetch(`/api/images?id=${id}`, { method: 'DELETE' })
+    const result = await res.json()
+    if (result.error) {
+      alert('Error deleting image: ' + result.error.message)
+    } else {
+      alert('Image deleted successfully')
+      loadImages()
+    }
   }
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
-    await fetch('/api/images', {
+    const res = await fetch('/api/images', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingImage)
     })
-    setEditingImage(null)
-    loadImages()
+    const result = await res.json()
+    if (result.error) {
+      alert('Error updating image: ' + result.error.message)
+    } else {
+      alert('Image updated successfully')
+      setEditingImage(null)
+      loadImages()
+    }
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -72,13 +84,19 @@ export default function ImagesPage() {
       image_description: formData.get('image_description'),
       additional_context: formData.get('additional_context')
     }
-    await fetch('/api/images', {
+    const res = await fetch('/api/images', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newImage)
     })
-    setShowCreateForm(false)
-    loadImages()
+    const result = await res.json()
+    if (result.error) {
+      alert('Error creating image: ' + result.error.message)
+    } else {
+      alert('Image created successfully')
+      setShowCreateForm(false)
+      loadImages()
+    }
   }
 
   if (loading) {
