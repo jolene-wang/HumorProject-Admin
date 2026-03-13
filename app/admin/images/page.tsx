@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 
 export default function ImagesPage() {
   const router = useRouter()
@@ -234,7 +233,7 @@ export default function ImagesPage() {
           {images.map((image) => (
             <div key={image.id} className="bg-white rounded-lg shadow overflow-hidden">
               <div className="relative h-48 bg-gray-200">
-                <Image src={image.url} alt="Image" fill className="object-cover" />
+                {image.url && <img src={image.url} alt="Image" className="w-full h-full object-cover" />}
               </div>
               <div className="p-4">
                 <p className="text-xs text-gray-500 mb-2">{image.id.slice(0, 8)}...</p>

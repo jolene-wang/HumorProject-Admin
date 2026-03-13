@@ -24,6 +24,13 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
   const [formData, setFormData] = useState<any>({})
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const pageSize = 50
+
+  useEffect(() => {
+    if (!loading) loadData()
+  }, [page])
 
   useEffect(() => {
     checkAuth()
@@ -52,8 +59,17 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
   }
 
   const loadData = async () => {
-    const { data: result } = await supabase.from(tableName).select('*').order('id', { ascending: false })
+    const from = page * pageSize
+    const to = from + pageSize - 1
+    
+    const { data: result, count } = await supabase
+      .from(tableName)
+      .select('*', { count: 'exact' })
+      .order('id', { ascending: false })
+      .range(from, to)
+    
     setData(result || [])
+    setHasMore(count ? (page + 1) * pageSize < count : false)
     setLoading(false)
   }
 
@@ -205,6 +221,23 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
           {data.length === 0 && (
             <div className="text-center py-12 text-gray-500">No data found</div>
           )}
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Previous
+          </button>
+          <span className="text-gray-700">Page {page + 1}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

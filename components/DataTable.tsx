@@ -21,6 +21,13 @@ export default function DataTable({ title, tableName, columns, orderBy = 'create
   const router = useRouter()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const pageSize = 50
+
+  useEffect(() => {
+    if (!loading) loadData()
+  }, [page])
 
   useEffect(() => {
     checkAuth()
@@ -49,12 +56,16 @@ export default function DataTable({ title, tableName, columns, orderBy = 'create
   }
 
   const loadData = async () => {
-    let query = supabase.from(tableName).select('*')
+    let query = supabase.from(tableName).select('*', { count: 'exact' })
     if (orderBy) query = query.order(orderBy, { ascending: false })
-    if (limit) query = query.limit(limit)
     
-    const { data: result } = await query
+    const from = page * pageSize
+    const to = from + pageSize - 1
+    query = query.range(from, to)
+    
+    const { data: result, count } = await query
     setData(result || [])
+    setHasMore(count ? (page + 1) * pageSize < count : false)
     setLoading(false)
   }
 
@@ -106,6 +117,23 @@ export default function DataTable({ title, tableName, columns, orderBy = 'create
           {data.length === 0 && (
             <div className="text-center py-12 text-gray-500">No data found</div>
           )}
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Previous
+          </button>
+          <span className="text-gray-700">Page {page + 1}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
