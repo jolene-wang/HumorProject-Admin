@@ -9,6 +9,13 @@ export default function ImagesPage() {
   const [loading, setLoading] = useState(true)
   const [editingImage, setEditingImage] = useState<any>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [page, setPage] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 100
+
+  useEffect(() => {
+    if (!loading) loadImages()
+  }, [page])
 
   useEffect(() => {
     checkAuth()
@@ -37,9 +44,13 @@ export default function ImagesPage() {
   }
 
   const loadImages = async () => {
-    const res = await fetch('/api/images')
-    const { data } = await res.json()
+    const from = page * pageSize
+    const to = from + pageSize - 1
+    
+    const res = await fetch(`/api/images?from=${from}&to=${to}`)
+    const { data, count } = await res.json()
     setImages(data || [])
+    setTotalCount(count || 0)
     setLoading(false)
   }
 
@@ -259,6 +270,23 @@ export default function ImagesPage() {
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Previous
+          </button>
+          <span className="text-gray-700">Page {page + 1}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={(page + 1) * pageSize >= totalCount}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

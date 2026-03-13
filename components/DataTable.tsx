@@ -23,7 +23,7 @@ export default function DataTable({ title, tableName, columns, orderBy = 'create
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
-  const pageSize = 50
+  const pageSize = 100
 
   useEffect(() => {
     if (!loading) loadData()

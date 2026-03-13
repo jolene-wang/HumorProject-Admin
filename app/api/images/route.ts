@@ -24,10 +24,21 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
+  const from = searchParams.get('from')
+  const to = searchParams.get('to')
 
   if (id) {
     const { data, error } = await supabase.from('images').select('*').eq('id', id).single()
     return NextResponse.json({ data, error })
+  }
+
+  if (from !== null && to !== null) {
+    const { data, error, count } = await supabase
+      .from('images')
+      .select('*', { count: 'exact' })
+      .order('created_datetime_utc', { ascending: false })
+      .range(parseInt(from), parseInt(to))
+    return NextResponse.json({ data, error, count })
   }
 
   const { data, error } = await supabase.from('images').select('*').order('created_datetime_utc', { ascending: false })

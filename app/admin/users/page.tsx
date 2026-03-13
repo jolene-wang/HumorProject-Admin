@@ -7,6 +7,13 @@ export default function UsersPage() {
   const router = useRouter()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const pageSize = 100
+
+  useEffect(() => {
+    if (!loading) loadUsers()
+  }, [page])
 
   useEffect(() => {
     checkAuth()
@@ -35,8 +42,17 @@ export default function UsersPage() {
   }
 
   const loadUsers = async () => {
-    const { data } = await supabase.from('profiles').select('*').order('created_datetime_utc', { ascending: false })
+    const from = page * pageSize
+    const to = from + pageSize - 1
+    
+    const { data, count } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact' })
+      .order('created_datetime_utc', { ascending: false })
+      .range(from, to)
+    
     setUsers(data || [])
+    setHasMore(count ? (page + 1) * pageSize < count : false)
     setLoading(false)
   }
 
@@ -89,6 +105,23 @@ export default function UsersPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Previous
+          </button>
+          <span className="text-gray-700">Page {page + 1}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

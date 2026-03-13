@@ -26,7 +26,7 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
   const [formData, setFormData] = useState<any>({})
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
-  const pageSize = 50
+  const pageSize = 100
 
   useEffect(() => {
     if (!loading) loadData()
