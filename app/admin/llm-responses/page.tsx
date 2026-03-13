@@ -5,7 +5,7 @@ export default function LLMResponsesPage() {
   return (
     <DataTable
       title="LLM Responses"
-      tableName="llm_responses"
+      tableName="llm_model_responses"
       columns={[
         { key: 'id', label: 'ID' },
         { key: 'llm_prompt_chain_id', label: 'Chain ID' },

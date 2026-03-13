@@ -7,6 +7,13 @@ export default function CaptionsPage() {
   const router = useRouter()
   const [captions, setCaptions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+  const pageSize = 100
+
+  useEffect(() => {
+    if (!loading) loadCaptions()
+  }, [page])
 
   useEffect(() => {
     checkAuth()
@@ -35,8 +42,17 @@ export default function CaptionsPage() {
   }
 
   const loadCaptions = async () => {
-    const { data } = await supabase.from('captions').select('*').order('created_datetime_utc', { ascending: false }).limit(100)
+    const from = page * pageSize
+    const to = from + pageSize - 1
+    
+    const { data, count } = await supabase
+      .from('captions')
+      .select('*', { count: 'exact' })
+      .order('created_datetime_utc', { ascending: false })
+      .range(from, to)
+    
     setCaptions(data || [])
+    setHasMore(count ? (page + 1) * pageSize < count : false)
     setLoading(false)
   }
 
@@ -95,6 +111,23 @@ export default function CaptionsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <button
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Previous
+          </button>
+          <span className="text-gray-700">Page {page + 1}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-300"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

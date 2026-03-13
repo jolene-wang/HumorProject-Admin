@@ -36,7 +36,7 @@ export default function HumorMixPage() {
   }
 
   const loadData = async () => {
-    const { data: result } = await supabase.from('humor_mix').select('*').order('id', { ascending: false })
+    const { data: result } = await supabase.from('humor_flavor_mix').select('*').order('id', { ascending: false })
     setData(result || [])
     setLoading(false)
   }
@@ -44,7 +44,7 @@ export default function HumorMixPage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     const { id, ...updates } = editingItem
-    const { error } = await supabase.from('humor_mix').update(updates).eq('id', id)
+    const { error } = await supabase.from('humor_flavor_mix').update(updates).eq('id', id)
     if (error) alert('Error: ' + error.message)
     else alert('Updated successfully')
     setEditingItem(null)

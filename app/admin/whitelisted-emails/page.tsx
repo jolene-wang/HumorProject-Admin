@@ -5,7 +5,7 @@ export default function WhitelistedEmailsPage() {
   return (
     <CRUDTable
       title="Whitelisted Email Addresses"
-      tableName="whitelisted_email_addresses"
+      tableName="whitelist_email_addresses"
       fields={[
         { key: 'email', label: 'Email', type: 'email', required: true },
         { key: 'is_active', label: 'Active', type: 'checkbox' },
