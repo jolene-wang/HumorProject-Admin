@@ -177,11 +177,11 @@ export default function ImagesPage() {
                       const urlDiv = document.getElementById('urlDiv');
                       const fileDiv = document.getElementById('fileDiv');
                       if (method === 'url') {
-                        urlDiv.style.display = 'block';
-                        fileDiv.style.display = 'none';
+                        if (urlDiv) urlDiv.style.display = 'block';
+                        if (fileDiv) fileDiv.style.display = 'none';
                       } else {
-                        urlDiv.style.display = 'none';
-                        fileDiv.style.display = 'block';
+                        if (urlDiv) urlDiv.style.display = 'none';
+                        if (fileDiv) fileDiv.style.display = 'block';
                       }
                     }}>
                       <option value="url">URL</option>
