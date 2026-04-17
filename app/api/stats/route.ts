@@ -44,7 +44,7 @@ export async function GET() {
   const totalScores = scoreStats?.length || 0
   
   // Calculate average from scores if available
-  const avgScore = totalScores > 0 ? 
+  const avgScore = totalScores > 0 && scoreStats ? 
     scoreStats.reduce((sum: number, score: any) => sum + (score.score || 0), 0) / totalScores : 0
 
   return NextResponse.json({
