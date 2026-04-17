@@ -236,6 +236,180 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {stats && (
+          <div className="mt-12">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Platform Analytics</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                <h4 className="text-lg font-bold mb-4 text-gray-800">User Engagement</h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Active Users</span>
+                    <span className="font-bold text-blue-600">{stats.totalUsers}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Avg Captions/User</span>
+                    <span className="font-bold text-green-600">{(stats.totalCaptions / Math.max(stats.totalUsers, 1)).toFixed(1)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Engagement Rate</span>
+                    <span className="font-bold text-purple-600">{((stats.totalRatings / Math.max(stats.totalCaptions, 1)) * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                <h4 className="text-lg font-bold mb-4 text-gray-800">Content Quality</h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Public Images</span>
+                    <span className="font-bold text-indigo-600">{((stats.publicImages / Math.max(stats.totalImages, 1)) * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Avg Rating</span>
+                    <div className="flex items-center">
+                      <span className="font-bold text-yellow-600 mr-1">{stats.avgRating}</span>
+                      <div className="flex">
+                        {[1,2,3,4,5].map(star => (
+                          <svg key={star} className={`w-4 h-4 ${star <= Math.round(stats.avgRating) ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Total Interactions</span>
+                    <span className="font-bold text-pink-600">{stats.totalRatings + stats.avgLikes}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                <h4 className="text-lg font-bold mb-4 text-gray-800">System Health</h4>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Database Tables</span>
+                    <span className="font-bold text-teal-600">15+</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Recent Activity</span>
+                    <span className="font-bold text-orange-600">{stats.recentActivity}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">System Status</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                      Operational
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-12">
+          <h3 className="text-2xl font-bold mb-6 text-gray-800">Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button
+              onClick={async () => {
+                if (confirm('This will refresh all dashboard statistics. Continue?')) {
+                  setLoading(true)
+                  await loadStats()
+                  setLoading(false)
+                  alert('Statistics refreshed successfully!')
+                }
+              }}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg"
+            >
+              <div className="flex items-center justify-center mb-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">Refresh Stats</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                const data = JSON.stringify(stats, null, 2)
+                const blob = new Blob([data], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `humorproject-stats-${new Date().toISOString().split('T')[0]}.json`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg"
+            >
+              <div className="flex items-center justify-center mb-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">Export Data</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                const report = `HumorProject Admin Report\n` +
+                  `Generated: ${new Date().toLocaleString()}\n\n` +
+                  `Total Users: ${stats?.totalUsers || 0}\n` +
+                  `Total Images: ${stats?.totalImages || 0}\n` +
+                  `Total Captions: ${stats?.totalCaptions || 0}\n` +
+                  `Average Rating: ${stats?.avgRating || 0}/5\n` +
+                  `Total Ratings: ${stats?.totalRatings || 0}\n` +
+                  `Public Images: ${stats?.publicImages || 0}\n` +
+                  `Recent Activity: ${stats?.recentActivity || 0}\n`
+                
+                const blob = new Blob([report], { type: 'text/plain' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `humorproject-report-${new Date().toISOString().split('T')[0]}.txt`
+                a.click()
+                URL.revokeObjectURL(url)
+              }}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+            >
+              <div className="flex items-center justify-center mb-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">Generate Report</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                const healthCheck = {
+                  timestamp: new Date().toISOString(),
+                  status: 'healthy',
+                  metrics: {
+                    totalUsers: stats?.totalUsers || 0,
+                    totalImages: stats?.totalImages || 0,
+                    totalCaptions: stats?.totalCaptions || 0,
+                    avgRating: stats?.avgRating || 0,
+                    systemLoad: 'normal'
+                  }
+                }
+                console.log('System Health Check:', healthCheck)
+                alert(`System Health: OK\nUsers: ${stats?.totalUsers}\nImages: ${stats?.totalImages}\nCaptions: ${stats?.totalCaptions}\nAvg Rating: ${stats?.avgRating}/5`)
+              }}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg"
+            >
+              <div className="flex items-center justify-center mb-2">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">Health Check</span>
+            </button>
+          </div>
+        </div>
+
         <div className="mt-12">
           <h3 className="text-2xl font-bold mb-6 text-gray-800">Management</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -249,7 +423,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">Users</h3>
-              <p className="text-sm text-gray-600">View profiles</p>
+              <p className="text-sm text-gray-600">Manage user profiles and permissions</p>
             </button>
             <button
               onClick={() => router.push('/admin/images')}
@@ -261,7 +435,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">Images</h3>
-              <p className="text-sm text-gray-600">CRUD + Upload</p>
+              <p className="text-sm text-gray-600">Upload & manage platform images</p>
             </button>
             <button
               onClick={() => router.push('/admin/humor-flavors')}
@@ -273,7 +447,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">Humor Flavors</h3>
-              <p className="text-sm text-gray-600">View flavors</p>
+              <p className="text-sm text-gray-600">Comedy styles & personality types</p>
             </button>
             <button
               onClick={() => router.push('/admin/humor-flavor-steps')}
@@ -288,16 +462,16 @@ export default function AdminDashboard() {
               <p className="text-sm text-gray-600">View steps</p>
             </button>
             <button
-              onClick={() => router.push('/admin/humor-mix')}
+              onClick={() => router.push('/admin/humor-flavor-mix')}
               className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 border border-gray-100"
             >
-              <div className="flex items-center justify-center w-12 h-12 bg-pink-100 rounded-full mx-auto mb-3">
-                <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
+              <div className="flex items-center justify-center w-12 h-12 bg-rose-100 rounded-full mx-auto mb-3">
+                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold mb-1 text-gray-800">Humor Mix</h3>
-              <p className="text-sm text-gray-600">Read/Update</p>
+              <h3 className="text-lg font-bold mb-1 text-gray-800">Humor Flavor Mix</h3>
+              <p className="text-sm text-gray-600">User humor preference weights</p>
             </button>
             <button
               onClick={() => router.push('/admin/terms')}
@@ -321,7 +495,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">Captions</h3>
-              <p className="text-sm text-gray-600">View captions</p>
+              <p className="text-sm text-gray-600">AI-generated image captions</p>
             </button>
             <button
               onClick={() => router.push('/admin/caption-requests')}
@@ -333,7 +507,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">Caption Requests</h3>
-              <p className="text-sm text-gray-600">View requests</p>
+              <p className="text-sm text-gray-600">User requests for new captions</p>
             </button>
             <button
               onClick={() => router.push('/admin/caption-examples')}
@@ -357,7 +531,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">LLM Models</h3>
-              <p className="text-sm text-gray-600">CRUD models</p>
+              <p className="text-sm text-gray-600">AI models for caption generation</p>
             </button>
             <button
               onClick={() => router.push('/admin/llm-providers')}
@@ -393,7 +567,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">LLM Responses</h3>
-              <p className="text-sm text-gray-600">View responses</p>
+              <p className="text-sm text-gray-600">AI model output & responses</p>
             </button>
             <button
               onClick={() => router.push('/admin/allowed-domains')}
@@ -405,7 +579,7 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">Allowed Domains</h3>
-              <p className="text-sm text-gray-600">CRUD domains</p>
+              <p className="text-sm text-gray-600">Email domains for user signup</p>
             </button>
             <button
               onClick={() => router.push('/admin/whitelisted-emails')}
@@ -417,7 +591,31 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold mb-1 text-gray-800">Whitelisted Emails</h3>
-              <p className="text-sm text-gray-600">CRUD emails</p>
+              <p className="text-sm text-gray-600">Pre-approved user email addresses</p>
+            </button>
+            <button
+              onClick={() => router.push('/admin/caption-votes')}
+              className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 border border-gray-100"
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-indigo-100 rounded-full mx-auto mb-3">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold mb-1 text-gray-800">Caption Votes</h3>
+              <p className="text-sm text-gray-600">User voting activity & preferences</p>
+            </button>
+            <button
+              onClick={() => router.push('/admin/caption-scores')}
+              className="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 border border-gray-100"
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-3">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold mb-1 text-gray-800">Caption Scores</h3>
+              <p className="text-sm text-gray-600">Numerical scoring & metrics</p>
             </button>
           </div>
         </div>

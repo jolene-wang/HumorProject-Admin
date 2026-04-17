@@ -86,8 +86,35 @@ export default function ImagesPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     const formData = new FormData(e.target as HTMLFormElement)
+    const uploadMethod = formData.get('uploadMethod')
+    
+    let imageUrl = formData.get('url') as string
+    
+    // Handle file upload
+    if (uploadMethod === 'file') {
+      const file = formData.get('imageFile') as File
+      if (!file) {
+        alert('Please select a file to upload')
+        return
+      }
+      
+      // Convert file to base64 data URL for demo purposes
+      // In production, you'd upload to a cloud storage service
+      const reader = new FileReader()
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onload = () => resolve(reader.result as string)
+        reader.readAsDataURL(file)
+      })
+      imageUrl = await base64Promise
+    }
+    
+    if (!imageUrl) {
+      alert('Please provide an image URL or upload a file')
+      return
+    }
+    
     const newImage = {
-      url: formData.get('url'),
+      url: imageUrl,
       profile_id: formData.get('profile_id'),
       is_public: formData.get('is_public') === 'true',
       is_common_use: formData.get('is_common_use') === 'true',
@@ -144,8 +171,30 @@ export default function ImagesPage() {
               <form onSubmit={handleCreate}>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">URL</label>
-                    <input name="url" required className="w-full border rounded px-3 py-2" />
+                    <label className="block text-sm font-medium mb-1">Upload Method</label>
+                    <select name="uploadMethod" className="w-full border rounded px-3 py-2 mb-3" onChange={(e) => {
+                      const method = e.target.value;
+                      const urlDiv = document.getElementById('urlDiv');
+                      const fileDiv = document.getElementById('fileDiv');
+                      if (method === 'url') {
+                        urlDiv.style.display = 'block';
+                        fileDiv.style.display = 'none';
+                      } else {
+                        urlDiv.style.display = 'none';
+                        fileDiv.style.display = 'block';
+                      }
+                    }}>
+                      <option value="url">URL</option>
+                      <option value="file">Upload File</option>
+                    </select>
+                  </div>
+                  <div id="urlDiv">
+                    <label className="block text-sm font-medium mb-1">Image URL</label>
+                    <input name="url" className="w-full border rounded px-3 py-2" placeholder="https://example.com/image.jpg" />
+                  </div>
+                  <div id="fileDiv" style={{display: 'none'}}>
+                    <label className="block text-sm font-medium mb-1">Upload Image File</label>
+                    <input name="imageFile" type="file" accept="image/*" className="w-full border rounded px-3 py-2" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Profile ID</label>

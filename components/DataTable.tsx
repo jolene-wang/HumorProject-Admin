@@ -17,13 +17,17 @@ interface DataTableProps {
   limit?: number
 }
 
-export default function DataTable({ title, tableName, columns, orderBy = 'created_datetime_utc', limit }: DataTableProps) {
+export default function DataTable({ title, tableName, columns, orderBy, limit }: DataTableProps) {
   const router = useRouter()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const pageSize = 100
+
+  // Default orderBy to 'id' if created_datetime_utc doesn't exist
+  const defaultOrderBy = orderBy || 'id'
 
   useEffect(() => {
     if (!loading) loadData()
@@ -56,16 +60,30 @@ export default function DataTable({ title, tableName, columns, orderBy = 'create
   }
 
   const loadData = async () => {
-    let query = supabase.from(tableName).select('*', { count: 'exact' })
-    if (orderBy) query = query.order(orderBy, { ascending: false })
-    
-    const from = page * pageSize
-    const to = from + pageSize - 1
-    query = query.range(from, to)
-    
-    const { data: result, count } = await query
-    setData(result || [])
-    setHasMore(count ? (page + 1) * pageSize < count : false)
+    try {
+      setError(null)
+      let query = supabase.from(tableName).select('*', { count: 'exact' })
+      if (defaultOrderBy) query = query.order(defaultOrderBy, { ascending: false })
+      
+      const from = page * pageSize
+      const to = from + pageSize - 1
+      query = query.range(from, to)
+      
+      const { data: result, count, error: queryError } = await query
+      
+      if (queryError) {
+        console.error('Query error:', queryError)
+        setError(`Database error: ${queryError.message}`)
+        setData([])
+      } else {
+        setData(result || [])
+        setHasMore(count ? (page + 1) * pageSize < count : false)
+      }
+    } catch (err) {
+      console.error('Load data error:', err)
+      setError('Failed to load data')
+      setData([])
+    }
     setLoading(false)
   }
 
@@ -89,6 +107,19 @@ export default function DataTable({ title, tableName, columns, orderBy = 'create
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-800 font-medium">Error loading {title.toLowerCase()}</p>
+              </div>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
+              <p className="text-red-600 text-sm mt-1">Table: {tableName}</p>
+            </div>
+          )}
+          
         <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -114,8 +145,14 @@ export default function DataTable({ title, tableName, columns, orderBy = 'create
               </tbody>
             </table>
           </div>
-          {data.length === 0 && (
-            <div className="text-center py-12 text-gray-500">No data found</div>
+          {data.length === 0 && !error && (
+            <div className="text-center py-12">
+              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8V4a1 1 0 00-1-1H7a1 1 0 00-1 1v1m8 0V4.5M9 5v-.5" />
+              </svg>
+              <p className="text-gray-500 font-medium">No {title.toLowerCase()} found</p>
+              <p className="text-gray-400 text-sm mt-1">This table appears to be empty or the data hasn't been created yet.</p>
+            </div>
           )}
         </div>
         <div className="mt-4 flex justify-between items-center">

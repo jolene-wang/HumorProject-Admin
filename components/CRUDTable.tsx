@@ -21,6 +21,7 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
   const router = useRouter()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
   const [formData, setFormData] = useState<any>({})
@@ -59,17 +60,30 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
   }
 
   const loadData = async () => {
-    const from = page * pageSize
-    const to = from + pageSize - 1
-    
-    const { data: result, count } = await supabase
-      .from(tableName)
-      .select('*', { count: 'exact' })
-      .order('id', { ascending: false })
-      .range(from, to)
-    
-    setData(result || [])
-    setHasMore(count ? (page + 1) * pageSize < count : false)
+    try {
+      setError(null)
+      const from = page * pageSize
+      const to = from + pageSize - 1
+      
+      const { data: result, count, error: queryError } = await supabase
+        .from(tableName)
+        .select('*', { count: 'exact' })
+        .order('id', { ascending: false })
+        .range(from, to)
+      
+      if (queryError) {
+        console.error('Query error:', queryError)
+        setError(`Database error: ${queryError.message}`)
+        setData([])
+      } else {
+        setData(result || [])
+        setHasMore(count ? (page + 1) * pageSize < count : false)
+      }
+    } catch (err) {
+      console.error('Load data error:', err)
+      setError('Failed to load data')
+      setData([])
+    }
     setLoading(false)
   }
 
@@ -139,6 +153,18 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-red-800 font-medium">Error loading {title.toLowerCase()}</p>
+            </div>
+            <p className="text-red-600 text-sm mt-1">{error}</p>
+            <p className="text-red-600 text-sm mt-1">Table: {tableName}</p>
+          </div>
+        )}
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
@@ -218,8 +244,14 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
               </tbody>
             </table>
           </div>
-          {data.length === 0 && (
-            <div className="text-center py-12 text-gray-500">No data found</div>
+          {data.length === 0 && !error && (
+            <div className="text-center py-12">
+              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8V4a1 1 0 00-1-1H7a1 1 0 00-1 1v1m8 0V4.5M9 5v-.5" />
+              </svg>
+              <p className="text-gray-500 font-medium">No {title.toLowerCase()} found</p>
+              <p className="text-gray-400 text-sm mt-1">Click "Create New" to add the first entry.</p>
+            </div>
           )}
         </div>
         <div className="mt-4 flex justify-between items-center">
