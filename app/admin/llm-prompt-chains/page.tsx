@@ -13,13 +13,17 @@ export default function LLMPromptChainsPage() {
           title="LLM Prompt Chains"
           tableName="llm_prompt_chains"
           columns={[
-            { key: 'id', label: 'Chain ID', render: (val) => val?.slice(0, 8) + '...' },
-            { key: 'caption_request_id', label: 'Request ID', render: (val) => val?.slice(0, 8) + '...' },
-            { key: 'llm_model_id', label: 'Model ID', render: (val) => {
-              if (!val) return <span className="text-gray-400 italic">No model assigned</span>
-              return val?.slice(0, 8) + '...'
+            { key: 'id', label: 'Chain ID' },
+            { key: 'caption_request_id', label: 'Request ID', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">No request</span>
+              return <span className="font-mono text-xs bg-purple-100 px-2 py-1 rounded">#{val}</span>
+            }},
+            { key: 'created_by_user_id', label: 'Created By', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">System</span>
+              return <span className="font-mono text-xs bg-blue-100 px-2 py-1 rounded">{val.slice(0, 8)}...</span>
             }},
             { key: 'created_datetime_utc', label: 'Created', render: (val) => new Date(val).toLocaleString() },
+            { key: 'modified_datetime_utc', label: 'Last Modified', render: (val) => new Date(val).toLocaleString() },
           ]}
           limit={100}
         />
