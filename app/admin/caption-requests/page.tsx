@@ -13,12 +13,18 @@ export default function CaptionRequestsPage() {
           title="Caption Requests"
           tableName="caption_requests"
           columns={[
-            { key: 'id', label: 'Request ID', render: (val) => val?.slice(0, 8) + '...' },
-            { key: 'profile_id', label: 'User ID', render: (val) => val?.slice(0, 8) + '...' },
-            { key: 'image_id', label: 'Image ID', render: (val) => val?.slice(0, 8) + '...' },
-            { key: 'humor_flavor_id', label: 'Humor Style', render: (val) => {
-              if (!val) return <span className="text-gray-400 italic">No flavor specified</span>
-              return `Flavor #${val}`
+            { key: 'id', label: 'Request ID' },
+            { key: 'profile_id', label: 'User ID', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">No user</span>
+              return <span className="font-mono text-xs bg-blue-100 px-2 py-1 rounded">{val.slice(0, 8)}...</span>
+            }},
+            { key: 'image_id', label: 'Image ID', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">No image</span>
+              return <span className="font-mono text-xs bg-purple-100 px-2 py-1 rounded">{val.slice(0, 8)}...</span>
+            }},
+            { key: 'created_by_user_id', label: 'Created By', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">System</span>
+              return <span className="font-mono text-xs bg-green-100 px-2 py-1 rounded">{val.slice(0, 8)}...</span>
             }},
             { key: 'created_datetime_utc', label: 'Requested', render: (val) => new Date(val).toLocaleString() },
           ]}
