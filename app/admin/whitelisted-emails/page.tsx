@@ -13,14 +13,17 @@ export default function WhitelistedEmailsPage() {
           title="Whitelisted Email Addresses"
           tableName="whitelist_email_addresses"
           fields={[
-            { key: 'email', label: 'Email', type: 'email', required: true },
-            { key: 'is_active', label: 'Active', type: 'checkbox' },
+            { key: 'email_address', label: 'Email Address', type: 'email', required: true },
           ]}
           displayColumns={[
             { key: 'id', label: 'ID' },
-            { key: 'email', label: 'Email' },
-            { key: 'is_active', label: 'Active', render: (val) => val ? '✅ Active' : '❌ Inactive' },
+            { key: 'email_address', label: 'Email Address' },
+            { key: 'created_by_user_id', label: 'Created By', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">System</span>
+              return <span className="font-mono text-xs bg-blue-100 px-2 py-1 rounded">{val.slice(0, 8)}...</span>
+            }},
             { key: 'created_datetime_utc', label: 'Created', render: (val) => new Date(val).toLocaleDateString() },
+            { key: 'modified_datetime_utc', label: 'Last Modified', render: (val) => new Date(val).toLocaleDateString() },
           ]}
         />
       </div>

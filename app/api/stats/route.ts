@@ -34,18 +34,22 @@ export async function GET() {
     supabase.from('captions').select('*', { count: 'exact', head: true }),
     supabase.from('images').select('*', { count: 'exact', head: true }).eq('is_public', true),
     supabase.from('images').select('created_datetime_utc').order('created_datetime_utc', { ascending: false }).limit(10),
-    supabase.from('caption_votes').select('*').limit(1000),
-    supabase.from('caption_scores').select('*').limit(1000),
-    supabase.from('captions').select('id, caption_request_id').limit(10)
+    supabase.from('caption_votes').select('vote_value').limit(1000),
+    supabase.from('caption_scores').select('total_votes').limit(1000),
+    supabase.from('captions').select('id, content, like_count').order('like_count', { ascending: false }).limit(5)
   ])
 
   // Calculate voting statistics
   const totalVotes = voteStats?.length || 0
   const totalScores = scoreStats?.length || 0
   
-  // Calculate average from scores if available
-  const avgScore = totalScores > 0 && scoreStats ? 
-    scoreStats.reduce((sum: number, score: any) => sum + (score.score || 0), 0) / totalScores : 0
+  // Calculate average from vote values
+  const avgScore = totalVotes > 0 && voteStats ? 
+    voteStats.reduce((sum: number, vote: any) => sum + (vote.vote_value || 0), 0) / totalVotes : 0
+  
+  // Calculate average likes from captions
+  const avgLikes = (topCaptions?.length || 0) > 0 && topCaptions ? 
+    topCaptions.reduce((sum: number, caption: any) => sum + (caption.like_count || 0), 0) / topCaptions.length : 0
 
   return NextResponse.json({
     totalUsers,
@@ -53,9 +57,9 @@ export async function GET() {
     totalCaptions,
     publicImages,
     recentActivity: recentActivity?.length || 0,
-    avgLikes: Math.round(avgScore * 100) / 100,
+    avgLikes: Math.round(avgLikes),
     totalRatings: totalVotes,
-    avgRating: Math.round(avgScore * 100) / 100,
+    avgRating: Math.round(Math.abs(avgScore) * 100) / 100,
     ratingDistribution: {
       5: Math.floor(totalVotes * 0.3),
       4: Math.floor(totalVotes * 0.25), 
@@ -63,10 +67,10 @@ export async function GET() {
       2: Math.floor(totalVotes * 0.15),
       1: Math.floor(totalVotes * 0.1)
     },
-    topRatedCaptions: topCaptions?.map((caption: any, idx: number) => ({
+    topRatedCaptions: topCaptions?.map((caption: any) => ({
       id: caption.id,
-      content: `Caption #${caption.id}`,
-      like_count: Math.floor(Math.random() * 50) + 10
+      content: caption.content || `Caption #${caption.id.slice(0, 8)}`,
+      like_count: caption.like_count || 0
     })) || [],
     recentRatings: totalVotes
   })

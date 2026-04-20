@@ -13,14 +13,20 @@ export default function AllowedDomainsPage() {
           title="Allowed Signup Domains"
           tableName="allowed_signup_domains"
           fields={[
-            { key: 'domain', label: 'Domain', required: true },
-            { key: 'is_active', label: 'Active', type: 'checkbox' },
+            { key: 'apex_domain', label: 'Domain', required: true },
           ]}
           displayColumns={[
             { key: 'id', label: 'ID' },
-            { key: 'domain', label: 'Domain' },
-            { key: 'is_active', label: 'Active', render: (val) => val ? '✅ Active' : '❌ Inactive' },
+            { key: 'apex_domain', label: 'Domain', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">No domain</span>
+              return <span className="font-mono text-sm bg-green-100 text-green-800 px-2 py-1 rounded">{val}</span>
+            }},
+            { key: 'created_by_user_id', label: 'Created By', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">System</span>
+              return <span className="font-mono text-xs bg-blue-100 px-2 py-1 rounded">{val.slice(0, 8)}...</span>
+            }},
             { key: 'created_datetime_utc', label: 'Created', render: (val) => new Date(val).toLocaleDateString() },
+            { key: 'modified_datetime_utc', label: 'Last Modified', render: (val) => new Date(val).toLocaleDateString() },
           ]}
         />
       </div>

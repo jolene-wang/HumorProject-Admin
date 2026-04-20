@@ -14,23 +14,19 @@ export default function CaptionScoresPage() {
           tableName="caption_scores"
           orderBy="id"
           columns={[
-            { key: 'id', label: 'Score ID' },
-            { key: 'caption_id', label: 'Caption ID', render: (val) => {
-              if (!val) return <span className="text-gray-400 italic">No caption</span>
-              return <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{val}</span>
+            { key: 'id', label: 'Score ID', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">No ID</span>
+              return <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{val.slice(0, 8)}...</span>
             }},
-            { key: 'score', label: 'Score', render: (val) => {
-              if (val === null || val === undefined) return <span className="text-gray-400 italic">No score</span>
-              const scoreColor = val >= 8 ? 'text-green-600' : val >= 5 ? 'text-yellow-600' : 'text-red-600'
-              return <span className={`font-bold ${scoreColor}`}>{val.toFixed(2)}</span>
+            { key: 'display_text', label: 'Caption Text', render: (val) => {
+              if (!val) return <span className="text-gray-400 italic">No text</span>
+              return <div className="max-w-xs truncate" title={val}>{val}</div>
             }},
-            { key: 'score_type', label: 'Score Type', render: (val) => {
-              if (!val) return <span className="text-gray-400 italic">No type</span>
-              return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                {val}
-              </span>
+            { key: 'total_votes', label: 'Total Votes', render: (val) => {
+              if (val === null || val === undefined) return <span className="text-gray-400 italic">0</span>
+              const voteColor = val >= 10 ? 'text-green-600' : val >= 5 ? 'text-yellow-600' : 'text-red-600'
+              return <span className={`font-bold ${voteColor}`}>{val} votes</span>
             }},
-            { key: 'created_datetime_utc', label: 'Scored At', render: (val) => new Date(val).toLocaleString() },
           ]}
           limit={100}
         />

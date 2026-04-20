@@ -89,15 +89,40 @@ export default function CRUDTable({ title, tableName, fields, displayColumns }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (editingItem) {
-      const { id, ...updates } = formData
-      const { error } = await supabase.from(tableName).update(updates).eq('id', editingItem.id)
-      if (error) alert('Error: ' + error.message)
-      else alert('Updated successfully')
-    } else {
-      const { error } = await supabase.from(tableName).insert(formData)
-      if (error) alert('Error: ' + error.message)
-      else alert('Created successfully')
+    try {
+      if (editingItem) {
+        const { id, created_datetime_utc, modified_datetime_utc, created_by_user_id, modified_by_user_id, ...updates } = formData
+        const { error } = await supabase.from(tableName).update({
+          ...updates,
+          modified_datetime_utc: new Date().toISOString(),
+          modified_by_user_id: (await supabase.auth.getSession()).data.session?.user.id
+        }).eq('id', editingItem.id)
+        if (error) {
+          console.error('Update error:', error)
+          alert('Error: ' + error.message)
+        } else {
+          alert('Updated successfully')
+        }
+      } else {
+        const { data: session } = await supabase.auth.getSession()
+        const userId = session.session?.user.id
+        const { error } = await supabase.from(tableName).insert({
+          ...formData,
+          created_datetime_utc: new Date().toISOString(),
+          modified_datetime_utc: new Date().toISOString(),
+          created_by_user_id: userId,
+          modified_by_user_id: userId
+        })
+        if (error) {
+          console.error('Insert error:', error)
+          alert('Error: ' + error.message)
+        } else {
+          alert('Created successfully')
+        }
+      }
+    } catch (err) {
+      console.error('Submit error:', err)
+      alert('Error: ' + (err as Error).message)
     }
     setShowForm(false)
     setEditingItem(null)
