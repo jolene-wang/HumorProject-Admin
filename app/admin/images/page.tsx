@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { generatePresignedUrl, registerImage, generateCaptions } from '../upload-actions'
+import { generatePresignedUrl, registerImage, generateCaptions } from '../../upload-actions'
 
 export default function ImagesPage() {
   const router = useRouter()
