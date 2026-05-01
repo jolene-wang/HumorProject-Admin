@@ -80,15 +80,15 @@ export default function AdminDashboard() {
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white shadow-2xl">
             <div className="flex flex-col md:flex-row items-center justify-between">
               <div className="mb-6 md:mb-0">
-                <h2 className="text-3xl font-bold mb-2">📸 Upload New Image</h2>
-                <p className="text-green-100 text-lg">Add images to the platform quickly and easily</p>
+                <h2 className="text-3xl font-bold mb-2">📸 Create Memes</h2>
+                <p className="text-green-100 text-lg">Upload images and generate AI captions instantly</p>
               </div>
               <button
                 onClick={() => router.push('/admin/images')}
                 className="bg-white text-green-600 px-8 py-4 rounded-xl font-bold text-xl hover:bg-green-50 shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-3"
               >
-                <span className="text-3xl">⬆️</span>
-                Upload Image
+                <span className="text-3xl">🤖</span>
+                Create Memes
               </button>
             </div>
           </div>

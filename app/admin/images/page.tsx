@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { generatePresignedUrl, registerImage, generateCaptions } from '../upload-actions'
 
 export default function ImagesPage() {
   const router = useRouter()
@@ -12,6 +13,7 @@ export default function ImagesPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState('')
+  const [captions, setCaptions] = useState<string[]>([])
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const pageSize = 100
@@ -90,6 +92,7 @@ export default function ImagesPage() {
     if (e.target.files && e.target.files[0]) {
       setUploadFile(e.target.files[0])
       setUploadStatus('')
+      setCaptions([])
     }
   }
 
@@ -99,6 +102,7 @@ export default function ImagesPage() {
     if (files && files[0]) {
       setUploadFile(files[0])
       setUploadStatus('')
+      setCaptions([])
     }
   }
 
@@ -113,54 +117,75 @@ export default function ImagesPage() {
     }
 
     setUploading(true)
-    setUploadStatus('Uploading...')
+    setUploadStatus('Generating presigned URL...')
 
     try {
-      // Upload file
-      const formData = new FormData()
-      formData.append('file', uploadFile)
-      
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
-      
-      const uploadResult = await uploadRes.json()
-      if (uploadResult.error) {
-        setUploadStatus('Upload failed: ' + uploadResult.error)
+      // Step 1: Generate presigned URL
+      const presignedResult = await generatePresignedUrl(uploadFile.type)
+      if (presignedResult.error) {
+        setUploadStatus(`Error: ${presignedResult.error}`)
         setUploading(false)
         return
       }
 
-      // Create image record
-      const { data: { session } } = await supabase.auth.getSession()
-      const newImage = {
-        url: uploadResult.url,
-        profile_id: session?.user.id,
-        is_public: true,
-        is_common_use: false,
-        image_description: uploadFile.name
-      }
-      
-      const res = await fetch('/api/images', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newImage)
+      const { presignedUrl, cdnUrl } = presignedResult.data
+      setUploadStatus('Uploading image...')
+
+      // Step 2: Upload image to presigned URL
+      const uploadResponse = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": uploadFile.type },
+        body: uploadFile,
       })
-      
-      const result = await res.json()
-      if (result.error) {
-        setUploadStatus('Error creating image: ' + result.error.message)
-      } else {
-        setUploadStatus('Image uploaded successfully!')
-        setUploadFile(null)
-        setShowUploadForm(false)
-        loadImages()
+
+      if (!uploadResponse.ok) {
+        setUploadStatus(`Upload failed: ${uploadResponse.statusText}`)
+        setUploading(false)
+        return
       }
+
+      setUploadStatus('Registering image...')
+
+      // Step 3: Register image
+      const registerResult = await registerImage(cdnUrl)
+      if (registerResult.error) {
+        setUploadStatus(`Error: ${registerResult.error}`)
+        setUploading(false)
+        return
+      }
+
+      const { imageId } = registerResult.data
+      setUploadStatus('Generating captions...')
+
+      // Step 4: Generate captions
+      const captionsResult = await generateCaptions(imageId)
+      if (captionsResult.error) {
+        setUploadStatus(`Error: ${captionsResult.error}`)
+        setUploading(false)
+        return
+      }
+      
+      const captionData = captionsResult.data
+      let captionsList: string[] = []
+      
+      if (Array.isArray(captionData)) {
+        captionsList = captionData.map((c: any) => c.content || c.caption || c)
+      } else if (captionData.captions) {
+        captionsList = Array.isArray(captionData.captions) 
+          ? captionData.captions.map((c: any) => c.content || c.caption || c)
+          : [captionData.captions]
+      } else if (captionData.content) {
+        captionsList = [captionData.content]
+      }
+      
+      setCaptions(captionsList)
+      setUploadStatus(captionsList.length > 0 ? 'Captions generated successfully!' : 'Image uploaded, but no captions generated')
+      setUploading(false)
+      loadImages() // Refresh the images list
     } catch (error) {
-      setUploadStatus('Upload failed: ' + error)
+      setUploadStatus(`Error: ${error}`)
+      setUploading(false)
     }
-    setUploading(false)
   }
 
   if (loading) {
@@ -248,19 +273,49 @@ export default function ImagesPage() {
                   disabled={!uploadFile || uploading}
                   className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {uploading ? 'Uploading...' : 'Upload Image'}
+                  {uploading ? 'Processing...' : 'Upload & Generate Captions'}
                 </button>
                 <button
                   onClick={() => {
                     setShowUploadForm(false)
                     setUploadFile(null)
                     setUploadStatus('')
+                    setCaptions([])
                   }}
                   className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
               </div>
+
+              {captions.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Generated Captions</h3>
+                    <button
+                      onClick={() => {
+                        setShowUploadForm(false)
+                        setUploadFile(null)
+                        setUploadStatus('')
+                        setCaptions([])
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Done →
+                    </button>
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {captions.map((caption, index) => (
+                      <div
+                        key={index}
+                        className="p-4 bg-gray-50 rounded-lg text-gray-800 text-sm leading-relaxed border"
+                      >
+                        {caption}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
