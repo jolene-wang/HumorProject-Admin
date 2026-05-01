@@ -8,7 +8,10 @@ export default function ImagesPage() {
   const [images, setImages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editingImage, setEditingImage] = useState<any>(null)
-  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showUploadForm, setShowUploadForm] = useState(false)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState('')
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const pageSize = 100
@@ -83,57 +86,81 @@ export default function ImagesPage() {
     }
   }
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
-    const uploadMethod = formData.get('uploadMethod')
-    
-    let imageUrl = formData.get('url') as string
-    
-    // Handle file upload
-    if (uploadMethod === 'file') {
-      const file = formData.get('imageFile') as File
-      if (!file) {
-        alert('Please select a file to upload')
-        return
-      }
-      
-      // Convert file to base64 data URL for demo purposes
-      // In production, you'd upload to a cloud storage service
-      const reader = new FileReader()
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string)
-        reader.readAsDataURL(file)
-      })
-      imageUrl = await base64Promise
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setUploadFile(e.target.files[0])
+      setUploadStatus('')
     }
-    
-    if (!imageUrl) {
-      alert('Please provide an image URL or upload a file')
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const files = e.dataTransfer.files
+    if (files && files[0]) {
+      setUploadFile(files[0])
+      setUploadStatus('')
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleUpload = async () => {
+    if (!uploadFile) {
+      setUploadStatus('Please select a file')
       return
     }
-    
-    const newImage = {
-      url: imageUrl,
-      profile_id: formData.get('profile_id'),
-      is_public: formData.get('is_public') === 'true',
-      is_common_use: formData.get('is_common_use') === 'true',
-      image_description: formData.get('image_description'),
-      additional_context: formData.get('additional_context')
+
+    setUploading(true)
+    setUploadStatus('Uploading...')
+
+    try {
+      // Upload file
+      const formData = new FormData()
+      formData.append('file', uploadFile)
+      
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      const uploadResult = await uploadRes.json()
+      if (uploadResult.error) {
+        setUploadStatus('Upload failed: ' + uploadResult.error)
+        setUploading(false)
+        return
+      }
+
+      // Create image record
+      const { data: { session } } = await supabase.auth.getSession()
+      const newImage = {
+        url: uploadResult.url,
+        profile_id: session?.user.id,
+        is_public: true,
+        is_common_use: false,
+        image_description: uploadFile.name
+      }
+      
+      const res = await fetch('/api/images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newImage)
+      })
+      
+      const result = await res.json()
+      if (result.error) {
+        setUploadStatus('Error creating image: ' + result.error.message)
+      } else {
+        setUploadStatus('Image uploaded successfully!')
+        setUploadFile(null)
+        setShowUploadForm(false)
+        loadImages()
+      }
+    } catch (error) {
+      setUploadStatus('Upload failed: ' + error)
     }
-    const res = await fetch('/api/images', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newImage)
-    })
-    const result = await res.json()
-    if (result.error) {
-      alert('Error creating image: ' + result.error.message)
-    } else {
-      alert('Image created successfully')
-      setShowCreateForm(false)
-      loadImages()
-    }
+    setUploading(false)
   }
 
   if (loading) {
@@ -153,10 +180,10 @@ export default function ImagesPage() {
             </div>
             <div className="flex items-center">
               <button
-                onClick={() => setShowCreateForm(true)}
+                onClick={() => setShowUploadForm(true)}
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
               >
-                Create Image
+                Upload Image
               </button>
             </div>
           </div>
@@ -164,70 +191,75 @@ export default function ImagesPage() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {showCreateForm && (
+        {showUploadForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-4">Create New Image</h2>
-              <form onSubmit={handleCreate}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Upload Method</label>
-                    <select name="uploadMethod" className="w-full border rounded px-3 py-2 mb-3" onChange={(e) => {
-                      const method = e.target.value;
-                      const urlDiv = document.getElementById('urlDiv');
-                      const fileDiv = document.getElementById('fileDiv');
-                      if (method === 'url') {
-                        if (urlDiv) urlDiv.style.display = 'block';
-                        if (fileDiv) fileDiv.style.display = 'none';
-                      } else {
-                        if (urlDiv) urlDiv.style.display = 'none';
-                        if (fileDiv) fileDiv.style.display = 'block';
-                      }
-                    }}>
-                      <option value="url">URL</option>
-                      <option value="file">Upload File</option>
-                    </select>
+            <div className="bg-white p-8 rounded-lg max-w-2xl w-full mx-4">
+              <h2 className="text-2xl font-bold mb-6">Upload New Image</h2>
+              
+              <div 
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-6 hover:border-gray-400 transition-colors"
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
+                {uploadFile ? (
+                  <div className="space-y-4">
+                    <img 
+                      src={URL.createObjectURL(uploadFile)} 
+                      alt="Preview" 
+                      className="max-w-full max-h-64 mx-auto rounded-lg"
+                    />
+                    <p className="text-sm text-gray-600">{uploadFile.name}</p>
+                    <p className="text-xs text-gray-500">{(uploadFile.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
-                  <div id="urlDiv">
-                    <label className="block text-sm font-medium mb-1">Image URL</label>
-                    <input name="url" className="w-full border rounded px-3 py-2" placeholder="https://example.com/image.jpg" />
-                  </div>
-                  <div id="fileDiv" style={{display: 'none'}}>
-                    <label className="block text-sm font-medium mb-1">Upload Image File</label>
-                    <input name="imageFile" type="file" accept="image/*" className="w-full border rounded px-3 py-2" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Profile ID</label>
-                    <input name="profile_id" required className="w-full border rounded px-3 py-2" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Description</label>
-                    <textarea name="image_description" className="w-full border rounded px-3 py-2" rows={3} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Additional Context</label>
-                    <textarea name="additional_context" className="w-full border rounded px-3 py-2" rows={2} />
-                  </div>
-                  <div className="flex gap-4">
-                    <label className="flex items-center">
-                      <input name="is_public" type="checkbox" value="true" className="mr-2" />
-                      Public
-                    </label>
-                    <label className="flex items-center">
-                      <input name="is_common_use" type="checkbox" value="true" className="mr-2" />
-                      Common Use
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-6xl text-gray-400">📸</div>
+                    <div>
+                      <p className="text-lg font-medium text-gray-700">Drop your image here</p>
+                      <p className="text-sm text-gray-500">or click to browse</p>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label 
+                      htmlFor="file-upload" 
+                      className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+                    >
+                      Choose File
                     </label>
                   </div>
+                )}
+              </div>
+
+              {uploadStatus && (
+                <div className="mb-4 p-3 rounded-lg bg-gray-100 text-center text-sm">
+                  {uploadStatus}
                 </div>
-                <div className="flex gap-2 mt-6">
-                  <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                    Create
-                  </button>
-                  <button type="button" onClick={() => setShowCreateForm(false)} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
-                    Cancel
-                  </button>
-                </div>
-              </form>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleUpload}
+                  disabled={!uploadFile || uploading}
+                  className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploading ? 'Uploading...' : 'Upload Image'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUploadForm(false)
+                    setUploadFile(null)
+                    setUploadStatus('')
+                  }}
+                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
