@@ -178,11 +178,12 @@ export default function ImagesPage() {
               </button>
               <h1 className="text-xl font-bold">Image Management</h1>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => setShowUploadForm(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold text-lg hover:bg-green-700 shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
               >
+                <span className="text-2xl">📸</span>
                 Upload Image
               </button>
             </div>

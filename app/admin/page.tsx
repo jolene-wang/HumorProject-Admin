@@ -75,6 +75,25 @@ export default function AdminDashboard() {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Prominent Upload Section */}
+        <div className="mb-12">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white shadow-2xl">
+            <div className="flex flex-col md:flex-row items-center justify-between">
+              <div className="mb-6 md:mb-0">
+                <h2 className="text-3xl font-bold mb-2">📸 Upload New Image</h2>
+                <p className="text-green-100 text-lg">Add images to the platform quickly and easily</p>
+              </div>
+              <button
+                onClick={() => router.push('/admin/images')}
+                className="bg-white text-green-600 px-8 py-4 rounded-xl font-bold text-xl hover:bg-green-50 shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-3"
+              >
+                <span className="text-3xl">⬆️</span>
+                Upload Image
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-8">
           <h2 className="text-4xl font-bold mb-2 text-gray-800">Dashboard</h2>
           <p className="text-gray-600">Overview of your platform statistics</p>
